@@ -1,9 +1,12 @@
 services:
   db_trainers:
     image: postgres
+    ports:
+      - 5433:5432
     restart: always
     volumes:
       - ./modules/db/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root

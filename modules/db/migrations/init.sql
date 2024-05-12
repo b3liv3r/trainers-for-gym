@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS trainers (
 
 CREATE TABLE IF NOT EXISTS current_bookings (
     booking_id SERIAL PRIMARY KEY,
-    user_id INT,
+    user_id BIGINT,
     trainer_id INT,
     start_time TIMESTAMP,
     end_time TIMESTAMP,

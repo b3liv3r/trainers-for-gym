@@ -50,15 +50,16 @@ func (repo *TrainersRepositoryDB) Booking(ctx context.Context, bookingID, userID
 	}
 
 	var booking models.Booking
-	if time.Now().After(booking.StartTime) {
-		tx.Rollback()
-		return errors.New("невозможно забронировать прошедший слот")
-	}
 
 	err = tx.GetContext(ctx, &booking, "SELECT * FROM available_bookings WHERE booking_id = $1 FOR UPDATE", bookingID)
 	if err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	if time.Now().After(booking.StartTime) {
+		tx.Rollback()
+		return errors.New("невозможно забронировать прошедший слот")
 	}
 
 	_, err = tx.ExecContext(ctx, "INSERT INTO current_bookings (user_id, trainer_id, start_time, end_time, activity) VALUES ($1, $2, $3, $4, $5)", userID, booking.TrainerID, booking.StartTime, booking.EndTime, booking.Activity)
@@ -88,14 +89,15 @@ func (repo *TrainersRepositoryDB) UnBooking(ctx context.Context, bookingID int) 
 	}
 
 	var booking models.Booking
-	if time.Now().Add(24 * time.Hour).After(booking.StartTime) {
-		return errors.New("невозможно отменить бронирование, так как до начала слота остается 24 часа или менее")
-	}
 
 	err = tx.GetContext(ctx, &booking, "SELECT * FROM current_bookings WHERE booking_id = $1 FOR UPDATE", bookingID)
 	if err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	if time.Now().Add(24 * time.Hour).After(booking.StartTime) {
+		return errors.New("невозможно отменить бронирование, так как до начала слота остается 24 часа или менее")
 	}
 
 	_, err = tx.ExecContext(ctx, "INSERT INTO available_bookings (trainer_id, start_time, end_time, activity) VALUES ($1, $2, $3, $4)", booking.TrainerID, booking.StartTime, booking.EndTime, booking.Activity)
